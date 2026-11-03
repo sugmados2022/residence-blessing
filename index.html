@@ -32,7 +32,10 @@
   :root { --navy: #14213d; --gold: #c9a227; --bg: #f4f1ea; --card: #fff; --muted: #555; }
   * { box-sizing: border-box; }
   body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: var(--bg); color: #222; line-height: 1.55; }
-  header { background: var(--navy); color: #fff; padding: 40px 24px 32px; }
+  header { position: relative; overflow: hidden; background: var(--navy); color: #fff; padding: 40px 24px 32px; min-height: 380px; display: flex; align-items: flex-end; }
+  header .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  header .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,18,38,.88) 0%, rgba(10,18,38,.45) 55%, rgba(10,18,38,.25) 100%); }
+  header .wrap { position: relative; z-index: 1; width: 100%; }
   header .wrap, main, footer .wrap { max-width: 960px; margin: 0 auto; }
   header h1 { margin: 0 0 8px; font-size: 2rem; }
   header p { margin: 4px 0; }
@@ -55,6 +58,8 @@
   .gallery figure { margin: 0; }
   .gallery img { width: 100%; border-radius: 8px; display: block; cursor: zoom-in; }
   .gallery figcaption { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .map-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin: 16px 0; background: #ddd; }
+  .map-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   table { border-collapse: collapse; width: 100%; }
   td, th { border-bottom: 1px solid #eee; padding: 8px; text-align: left; vertical-align: top; }
   a { color: var(--navy); }
@@ -93,6 +98,8 @@
 </div></nav>
 
 <header>
+  <img id="heroImg" class="hero-img" src="https://residence-blessing-admin.onrender.com/assets/photo-01.jpg" alt="Salon lumineux de la Résidence Blessing à Cocotomey" onerror="this.style.display='none'">
+  <div class="hero-overlay" aria-hidden="true"></div>
   <div class="wrap">
     <p id="meta"></p>
     <h1 id="name">Résidence Blessing</h1>
@@ -159,6 +166,9 @@
       <a class="btn secondary" id="directionsLink" target="_blank" rel="noopener">Itinéraire</a>
       <a class="btn secondary" id="mapsLink" target="_blank" rel="noopener">Ouvrir dans Google Maps</a>
     </p>
+    <div class="map-wrap">
+      <iframe id="mapsEmbed" title="Carte — Résidence Blessing à Cocotomey" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=R%C3%A9sidence%20Blessing%2C%20Parcelle%20D%2C%20maison%20AGBIDINOUKOUN%2C%201er%20%C3%A9tage%2C%20Cocotomey%2C%20Abomey-Calavi%2C%20B%C3%A9nin&amp;output=embed"></iframe>
+    </div>
     <h3>Adresse &amp; distances</h3>
     <table id="accessTable"></table>
     <p id="accessNote" class="small"></p>
@@ -272,6 +282,17 @@ function render(d) {
     `${p.bathrooms} salles de bain`, 'Vue sur le lac', 'Parking privé gratuit',
     `À partir de ${pr.base} ${pr.currency} / nuit`
   ].map(c => `<span class="chip">${esc(c)}</span>`).join('');
+  // Photo de bannière : première photo (Le salon), servie par le backend.
+  // Si le backend est endormi, l'image échoue et se masque (onerror) : l'en-tête
+  // garde son fond bleu nuit et la mise en page reste intacte ; au réveil, le
+  // rendu live réaffiche la photo.
+  const heroImg = document.getElementById('heroImg');
+  const heroPhoto = (d.photos || [])[0];
+  if (heroImg && heroPhoto) {
+    heroImg.style.display = 'block';
+    heroImg.src = ASSETS_URL + '/' + heroPhoto.file;
+    heroImg.alt = heroPhoto.alt || heroPhoto.caption || '';
+  }
   document.getElementById('description').textContent = p.description;
   document.getElementById('descriptionLong').textContent = p.descriptionLong;
   document.getElementById('factsTable').innerHTML = [
@@ -316,6 +337,8 @@ function render(d) {
     'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent('Résidence Blessing, ' + fullAddress);
   document.getElementById('mapsLink').href =
     'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Résidence Blessing, ' + fullAddress);
+  document.getElementById('mapsEmbed').src =
+    'https://maps.google.com/maps?q=' + encodeURIComponent('Résidence Blessing, ' + fullAddress) + '&output=embed';
   document.getElementById('accessTable').innerHTML = [
     ['Adresse', p.address], ['Quartier', p.neighborhood], ['Commune', p.commune],
     ['Plus Code', p.plusCode], ['Plage de Fidjrossè', p.beachDistanceKm + ' km'],
